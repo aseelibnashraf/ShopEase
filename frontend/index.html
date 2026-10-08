@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopEase</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>ShopEase</h1>
+    <button id="cart-btn">Cart (<span id="cart-count">0</span>)</button>
+  </header>
+
+  <main>
+    <section id="products" class="grid"><p>Loading products…</p></section>
+
+    <aside id="cart" class="hidden">
+      <h2>Your cart</h2>
+      <ul id="cart-items"></ul>
+      <p class="total">Total: ₹<span id="cart-total">0</span></p>
+      <input id="customer-name" placeholder="Your name">
+      <button id="checkout-btn">Place order</button>
+      <p id="message"></p>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
