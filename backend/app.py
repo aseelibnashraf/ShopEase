@@ -11,6 +11,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["SESSION_COOKIE_HTTPONLY"] = True   # JavaScript can't read the cookie
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # other websites can't send it for you
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE") == "true"  # HTTPS only (server)
 
 
 # Connect to the database (settings come from environment variables)
@@ -233,3 +234,4 @@ def my_orders():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+    
