@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product · ShopEase</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <div id="product" class="panel"><p>Loading…</p></div>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="common.js"></script>
+  <script>
+    renderHeader();
+
+    async function loadProduct() {
+      const box = document.getElementById("product");
+
+      // Read the id from the address bar: product.html?id=3  ->  "3"
+      const id = new URLSearchParams(location.search).get("id");
+
+      const res = await fetch(`${API}/products/${encodeURIComponent(id)}`);
+      if (!res.ok) {
+        box.innerHTML = `<p class="error">Product not found.</p><a href="index.html">← Back to shop</a>`;
+        return;
+      }
+      const p = await res.json();
+      document.title = `${p.name} · ShopEase`;
+
+      // Quantity choices 1 to 10 (the same limit as the backend)
+      const options = Array.from({ length: 10 }, (_, i) => `<option>${i + 1}</option>`).join("");
+
+      box.innerHTML = `
+        <a href="index.html">← Back to shop</a>
+        <div class="product">
+          <img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}">
+          <div>
+            <h1>${escapeHtml(p.name)}</h1>
+            <p class="muted">${escapeHtml(p.description || "")}</p>
+            <p class="price big">${rupees(p.price)}</p>
+            <label for="qty">Quantity</label>
+            <select id="qty">${options}</select>
+            <button id="add-btn">Add to cart</button>
+          </div>
+        </div>`;
+
+      document.getElementById("add-btn").onclick = () => {
+        const qty = Number(document.getElementById("qty").value);
+        addToCart(p, qty);
+        showToast(`Added ${qty} to cart`);
+      };
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>

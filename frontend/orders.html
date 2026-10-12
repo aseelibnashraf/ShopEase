@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My orders · ShopEase</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <h1>My orders</h1>
+    <div id="orders"><p>Loading…</p></div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    const PAYMENT_NAMES = { cod: "Cash on delivery", upi: "UPI" };
+
+    async function loadOrders() {
+      const box = document.getElementById("orders");
+
+      const me = await renderHeader();
+      if (!me) {
+        location.href = "login.html?next=orders.html";
+        return;
+      }
+
+      const res = await fetch(`${API}/orders`);
+      const orders = await res.json();
+
+      if (orders.length === 0) {
+        box.innerHTML = `<div class="panel"><p>You haven't placed any orders yet.</p><a href="index.html">Start shopping</a></div>`;
+        return;
+      }
+
+      box.innerHTML = orders.map(o => `
+        <div class="panel order">
+          <div class="order-head">
+            <strong>Order #${o.id}</strong>
+            <span class="status">${escapeHtml(o.status)}</span>
+          </div>
+          <p class="muted">${new Date(o.created_at).toLocaleString("en-IN")}
+             · ${escapeHtml(PAYMENT_NAMES[o.payment_method] || "")}</p>
+          ${o.items.map(i => `
+            <div class="summary-row">
+              <span>${escapeHtml(i.name)} × ${i.quantity}</span>
+              <span>${rupees(i.price * i.quantity)}</span>
+            </div>`).join("")}
+          <div class="cart-total"><span>Total</span><strong>${rupees(o.total)}</strong></div>
+          <p class="muted">Ship to: ${escapeHtml(o.address || "")}, ${escapeHtml(o.city || "")} ${escapeHtml(o.pincode || "")}</p>
+        </div>`).join("");
+    }
+
+    loadOrders();
+  </script>
+</body>
+</html>

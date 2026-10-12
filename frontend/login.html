@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · ShopEase</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <div class="two-col">
+      <form id="login-form" class="panel">
+        <h2>Log in</h2>
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" required>
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" required>
+        <p id="login-error" class="error"></p>
+        <button type="submit">Log in</button>
+      </form>
+
+      <form id="signup-form" class="panel">
+        <h2>New here? Create an account</h2>
+        <label for="signup-name">Name</label>
+        <input id="signup-name" required>
+        <label for="signup-email">Email</label>
+        <input id="signup-email" type="email" required>
+        <label for="signup-password">Password (at least 8 characters)</label>
+        <input id="signup-password" type="password" minlength="8" required>
+        <p id="signup-error" class="error"></p>
+        <button type="submit">Create account</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    // Where to go after logging in: login.html?next=checkout.html -> checkout.html
+    // Only our own simple page names are allowed, so a link can't send people to another website
+    function nextPage() {
+      const next = new URLSearchParams(location.search).get("next") || "";
+      return /^[a-z]+\.html$/.test(next) ? next : "index.html";
+    }
+
+    // Send a form to the backend; go on if it worked, show the error if not
+    async function send(url, body, errorEl, button) {
+      errorEl.textContent = "";
+      button.disabled = true;
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          location.href = nextPage();
+        } else {
+          errorEl.textContent = data.error || "Something went wrong.";
+        }
+      } catch {
+        errorEl.textContent = "Could not reach the server.";
+      }
+      button.disabled = false;
+    }
+
+    document.getElementById("login-form").onsubmit = (e) => {
+      e.preventDefault();   // stop the browser's normal form submit (it would reload the page)
+      send(`${API}/login`, {
+        email: document.getElementById("login-email").value,
+        password: document.getElementById("login-password").value,
+      }, document.getElementById("login-error"), e.submitter);
+    };
+
+    document.getElementById("signup-form").onsubmit = (e) => {
+      e.preventDefault();
+      send(`${API}/signup`, {
+        name: document.getElementById("signup-name").value,
+        email: document.getElementById("signup-email").value,
+        password: document.getElementById("signup-password").value,
+      }, document.getElementById("signup-error"), e.submitter);
+    };
+
+    // Already logged in? Skip this page
+    renderHeader().then(me => { if (me) location.href = nextPage(); });
+  </script>
+</body>
+</html>
