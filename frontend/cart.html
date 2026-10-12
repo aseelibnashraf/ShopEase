@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cart · ShopEase</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <h1>Your cart</h1>
+    <div id="cart" class="panel"></div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    renderHeader();
+
+    function renderCart() {
+      const box = document.getElementById("cart");
+      const items = Object.values(getCart());
+
+      if (items.length === 0) {
+        box.innerHTML = `<p>Your cart is empty.</p><a href="index.html">Continue shopping</a>`;
+        return;
+      }
+
+      const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+      box.innerHTML = items.map(i => {
+        const options = Array.from({ length: 10 }, (_, n) =>
+          `<option ${n + 1 === i.quantity ? "selected" : ""}>${n + 1}</option>`).join("");
+        return `
+          <div class="cart-row">
+            <img src="${escapeHtml(i.image_url)}" alt="">
+            <div class="grow">
+              <a href="product.html?id=${i.id}">${escapeHtml(i.name)}</a>
+              <div class="muted">${rupees(i.price)} each</div>
+            </div>
+            <select class="qty" data-id="${i.id}">${options}</select>
+            <strong>${rupees(i.price * i.quantity)}</strong>
+            <button class="link remove" data-id="${i.id}">Remove</button>
+          </div>`;
+      }).join("") + `
+        <div class="cart-total"><span>Total</span><strong>${rupees(total)}</strong></div>
+        <p class="muted">Prices are checked again by the server when you place the order.</p>
+        <a href="checkout.html" class="button">Go to checkout</a>`;
+
+      // Change a quantity
+      box.querySelectorAll("select.qty").forEach(sel => {
+        sel.onchange = () => {
+          const cart = getCart();
+          cart[sel.dataset.id].quantity = Number(sel.value);
+          saveCart(cart);
+          renderCart();
+        };
+      });
+
+      // Remove an item
+      box.querySelectorAll("button.remove").forEach(btn => {
+        btn.onclick = () => {
+          const cart = getCart();
+          delete cart[btn.dataset.id];
+          saveCart(cart);
+          renderCart();
+        };
+      });
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>

@@ -100,3 +100,47 @@ label { display: block; margin: 12px 0 4px; font-weight: 600; }
 }
 
 .hidden { display: none; }
+/* ---------- Product page ---------- */
+.product {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+.product img { width: 100%; border-radius: 8px; }
+.price.big { font-size: 1.6rem; margin: 12px 0; }
+.product select { width: auto; margin-bottom: 12px; }
+
+/* ---------- Cart page ---------- */
+.cart-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e3e6ea;
+}
+.cart-row img { width: 72px; border-radius: 6px; }
+.grow { flex: 1; min-width: 140px; }
+select.qty { width: auto; }
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  padding: 16px 0 4px;
+}
+
+/* A link that looks like a button */
+a.button {
+  display: inline-block;
+  background: #2457d6;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+a.button:hover { background: #1b44ad; text-decoration: none; }
+
+/* On phones, stack the product image above the details */
+@media (max-width: 640px) {
+  .product { grid-template-columns: 1fr; }
+}
