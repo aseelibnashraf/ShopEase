@@ -1,13 +1,13 @@
 import os
 import psycopg2
-import psycopg2.errors                       # NEW: lets us catch "email already exists"
+import psycopg2.errors
 import psycopg2.extras
-from flask import Flask, jsonify, request, session            # NEW: session
-from werkzeug.security import generate_password_hash, check_password_hash  # NEW
+from flask import Flask, jsonify, request, session
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-# NEW: sessions. The login cookie is signed with this secret key
+# Sessions: the login cookie is signed with this secret key
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["SESSION_COOKIE_HTTPONLY"] = True   # JavaScript can't read the cookie
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # other websites can't send it for you
@@ -29,7 +29,7 @@ def health():
     return jsonify(status="ok")
 
 
-# ---------- NEW: Accounts ----------
+# ---------- Accounts ----------
 
 # Create an account
 @app.route("/api/signup", methods=["POST"])
@@ -114,58 +114,107 @@ def products():
     return jsonify(rows)
 
 
-# ---------- Orders (we'll upgrade these in Step 3) ----------
+# ---------- Orders ----------
 
-# Place an order
+PAYMENT_METHODS = {"cod", "upi"}   # Cash on delivery, UPI (pretend; no real payment)
+
+
+# Place an order (logged-in users only)
 @app.route("/api/orders", methods=["POST"])
 def create_order():
-    data = request.get_json()
-    name = data.get("customer_name")
-    items = data.get("items")          # example: [{"product_id": 1, "quantity": 2}]
+    # 1. Who is ordering? Taken from the signed session cookie, not from the request
+    if "user_id" not in session:
+        return jsonify(error="Please log in to place an order"), 401
 
-    if not name or not items:
-        return jsonify(error="customer_name and items are required"), 400
+    data = request.get_json() or {}
+    items = data.get("items") or []
+    address = (data.get("address") or "").strip()
+    city = (data.get("city") or "").strip()
+    pincode = (data.get("pincode") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    payment_method = data.get("payment_method")
+
+    # 2. Check the shipping details
+    if not address or not city:
+        return jsonify(error="Address and city are required"), 400
+    if not (pincode.isdigit() and len(pincode) == 6):
+        return jsonify(error="Pincode must be 6 digits"), 400
+    if not (phone.isdigit() and len(phone) == 10):
+        return jsonify(error="Phone number must be 10 digits"), 400
+    if payment_method not in PAYMENT_METHODS:
+        return jsonify(error="Please choose a payment method"), 400
+
+    # 3. Check the items
+    if not isinstance(items, list) or not items:
+        return jsonify(error="Your cart is empty"), 400
+    for item in items:
+        qty = item.get("quantity")
+        if not isinstance(qty, int) or not 1 <= qty <= 10:
+            return jsonify(error="Quantity must be between 1 and 10"), 400
 
     conn = get_db()
     cur = conn.cursor()
 
-    # 1. Look up the REAL price of each product and add up the total
+    # 4. Look up the REAL price of each product and add up the total
     total = 0
     for item in items:
-        cur.execute("SELECT price FROM products WHERE id = %s", (item["product_id"],))
+        cur.execute("SELECT price FROM products WHERE id = %s", (item.get("product_id"),))
         row = cur.fetchone()
         if row is None:
             conn.close()
-            return jsonify(error="product not found"), 400
+            return jsonify(error="Product not found"), 400
         item["price"] = row[0]
         total += row[0] * item["quantity"]
 
-    # 2. Save the order and get its new id
-    cur.execute("INSERT INTO orders (customer_name, total) VALUES (%s, %s) RETURNING id", (name, total))
+    # 5. Save the order, linked to the user
+    cur.execute(
+        """INSERT INTO orders (user_id, customer_name, total, address, city, pincode, phone, payment_method)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+        (session["user_id"], session["name"], total, address, city, pincode, phone, payment_method),
+    )
     order_id = cur.fetchone()[0]
 
-    # 3. Save each product in the order
+    # 6. Save each product in the order
     for item in items:
         cur.execute(
             "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
             (order_id, item["product_id"], item["quantity"], item["price"]),
         )
 
-    conn.commit()      # make the changes permanent
+    conn.commit()      # all or nothing: nothing is saved until this line
     conn.close()
     return jsonify(order_id=order_id, total=float(total)), 201
 
 
-# See recent orders
+# My orders: only the logged-in user's own orders
 @app.route("/api/orders")
-def list_orders():
+def my_orders():
+    if "user_id" not in session:
+        return jsonify(error="Please log in"), 401
+
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT id, customer_name, total::float AS total, created_at FROM orders ORDER BY id DESC")
-    rows = cur.fetchall()
+    cur.execute(
+        """SELECT id, total::float AS total, status, address, city, pincode, payment_method, created_at
+           FROM orders WHERE user_id = %s ORDER BY id DESC""",
+        (session["user_id"],),
+    )
+    orders = cur.fetchall()
+
+    # Add the products in each order
+    for order in orders:
+        cur.execute(
+            """SELECT p.name, oi.quantity, oi.price::float AS price
+               FROM order_items oi JOIN products p ON p.id = oi.product_id
+               WHERE oi.order_id = %s""",
+            (order["id"],),
+        )
+        order["items"] = cur.fetchall()
+
     conn.close()
-    return jsonify(rows)
+    return jsonify(orders)
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+    
