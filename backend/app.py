@@ -114,6 +114,22 @@ def products():
     return jsonify(rows)
 
 
+# Get one product (for the product page)
+@app.route("/api/products/<int:product_id>")
+def product_detail(product_id):
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        "SELECT id, name, description, price::float AS price, image_url FROM products WHERE id = %s",
+        (product_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    if row is None:
+        return jsonify(error="Product not found"), 404
+    return jsonify(row)
+
+
 # ---------- Orders ----------
 
 PAYMENT_METHODS = {"cod", "upi"}   # Cash on delivery, UPI (pretend; no real payment)
@@ -217,4 +233,3 @@ def my_orders():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-    

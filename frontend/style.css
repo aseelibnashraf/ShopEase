@@ -1,22 +1,102 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: #f6f3ec; color: #1a1a1a; }
-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #111; color: #fff; }
-header button { background: #fff; color: #111; border: 0; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-main { display: flex; gap: 24px; padding: 24px; align-items: flex-start; }
-.grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-.card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-.card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #ddd; }
-.card .body { padding: 14px; }
-.card h3 { font-size: 16px; margin-bottom: 4px; }
-.card p { font-size: 13px; color: #666; margin-bottom: 10px; }
-.card .row { display: flex; justify-content: space-between; align-items: center; }
-.card button, #checkout-btn { background: #111; color: #fff; border: 0; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
-#cart { width: 300px; background: #fff; padding: 18px; border-radius: 10px; position: sticky; top: 24px; }
-#cart h2 { font-size: 18px; margin-bottom: 12px; }
-#cart li { list-style: none; display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-bottom: 1px solid #eee; }
-#cart .total { font-weight: 700; margin: 12px 0; }
-#cart input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; }
-#checkout-btn { width: 100%; }
-#message { margin-top: 10px; font-size: 14px; }
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f6f7f9;
+  color: #1f2328;
+}
+
+a { color: #2457d6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- Header ---------- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e3e6ea;
+  position: sticky;
+  top: 0;
+}
+.logo { font-size: 1.4rem; font-weight: 700; color: #1f2328; }
+nav { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hello { color: #57606a; }
+
+/* ---------- Page ---------- */
+main { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+h1 { margin-top: 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card img { width: 100%; border-radius: 6px; display: block; }
+.card h3 { margin: 4px 0 0; font-size: 1.05rem; }
+.card h3 a { color: inherit; }
+.price { font-weight: 700; margin: 0; }
+
+/* ---------- Forms and buttons ---------- */
+button {
+  background: #2457d6;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+button:hover { background: #1b44ad; }
+button:disabled { background: #9aa4b2; cursor: not-allowed; }
+button.link { background: none; color: #2457d6; padding: 0; }
+button.link:hover { text-decoration: underline; }
+button.secondary { background: #e8ebef; color: #1f2328; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccd2d9;
+  border-radius: 6px;
+  font: inherit;
+}
+label { display: block; margin: 12px 0 4px; font-weight: 600; }
+
+.panel {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.error { color: #c62828; }
+.success { color: #1b7f3b; }
+.muted { color: #57606a; }
+
+/* ---------- Toast message ---------- */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2328;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 6px;
+}
+
 .hidden { display: none; }
-@media (max-width: 700px) { main { flex-direction: column; } #cart { width: 100%; position: static; } }
