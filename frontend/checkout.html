@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout · ShopEase</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <h1>Checkout</h1>
+    <div id="checkout"><p>Loading…</p></div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    async function start() {
+      const box = document.getElementById("checkout");
+
+      // 1. You must be logged in. If not, go to login and come back here afterwards
+      const me = await renderHeader();
+      if (!me) {
+        location.href = "login.html?next=checkout.html";
+        return;
+      }
+
+      // 2. You need something in the cart
+      const items = Object.values(getCart());
+      if (items.length === 0) {
+        box.innerHTML = `<div class="panel"><p>Your cart is empty.</p><a href="index.html">Continue shopping</a></div>`;
+        return;
+      }
+
+      const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+      // 3. Show the order summary and the shipping form
+      box.innerHTML = `
+        <div class="two-col">
+          <form id="checkout-form" class="panel">
+            <h2>Shipping details</h2>
+            <label for="address">Address</label>
+            <textarea id="address" rows="3" required></textarea>
+            <label for="city">City</label>
+            <input id="city" required>
+            <label for="pincode">Pincode</label>
+            <input id="pincode" inputmode="numeric" pattern="[0-9]{6}" title="6 digits" required>
+            <label for="phone">Phone</label>
+            <input id="phone" inputmode="numeric" pattern="[0-9]{10}" title="10 digits" required>
+
+            <label>Payment</label>
+            <label class="choice"><input type="radio" name="payment" value="cod" checked> Cash on delivery</label>
+            <label class="choice"><input type="radio" name="payment" value="upi"> UPI</label>
+
+            <p id="checkout-error" class="error"></p>
+            <button type="submit" id="place-btn">Place order</button>
+          </form>
+
+          <div class="panel">
+            <h2>Order summary</h2>
+            ${items.map(i => `
+              <div class="summary-row">
+                <span>${escapeHtml(i.name)} × ${i.quantity}</span>
+                <span>${rupees(i.price * i.quantity)}</span>
+              </div>`).join("")}
+            <div class="cart-total"><span>Total</span><strong>${rupees(total)}</strong></div>
+          </div>
+        </div>`;
+
+      document.getElementById("checkout-form").onsubmit = placeOrder;
+    }
+
+    async function placeOrder(e) {
+      e.preventDefault();
+      const button = document.getElementById("place-btn");
+      const errorEl = document.getElementById("checkout-error");
+      errorEl.textContent = "";
+      button.disabled = true;               // stops double orders from a double click
+      button.textContent = "Placing order…";
+
+      // Only send ids and quantities. The server looks up the real prices
+      const items = Object.values(getCart()).map(i => ({ product_id: i.id, quantity: i.quantity }));
+
+      try {
+        const res = await fetch(`${API}/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items,
+            address: document.getElementById("address").value,
+            city: document.getElementById("city").value,
+            pincode: document.getElementById("pincode").value,
+            phone: document.getElementById("phone").value,
+            payment_method: document.querySelector("input[name=payment]:checked").value,
+          }),
+        });
+        const data = await res.json();
+
+        if (res.status === 401) {           // the session expired: log in again
+          location.href = "login.html?next=checkout.html";
+          return;
+        }
+        if (res.ok) {
+          saveCart({});                     // empty the cart
+          document.getElementById("checkout").innerHTML = `
+            <div class="panel">
+              <h2 class="success">Order #${data.order_id} placed!</h2>
+              <p>Total: <strong>${rupees(data.total)}</strong></p>
+              <a href="orders.html" class="button">View my orders</a>
+              <a href="index.html">Continue shopping</a>
+            </div>`;
+          return;
+        }
+        errorEl.textContent = data.error || "Something went wrong.";
+      } catch {
+        errorEl.textContent = "Could not reach the server.";
+      }
+      button.disabled = false;
+      button.textContent = "Place order";
+    }
+
+    start();
+  </script>
+</body>
+</html>

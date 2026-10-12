@@ -144,3 +144,39 @@ a.button:hover { background: #1b44ad; text-decoration: none; }
 @media (max-width: 640px) {
   .product { grid-template-columns: 1fr; }
 }
+/* ---------- Login and checkout layouts ---------- */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.two-col h2 { margin-top: 0; }
+.two-col button[type=submit] { margin-top: 8px; width: 100%; }
+
+/* Radio buttons: don't stretch them full width */
+label.choice { font-weight: 400; display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+label.choice input { width: auto; }
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef0f3;
+}
+
+/* ---------- My orders ---------- */
+.order { margin-bottom: 16px; }
+.order-head { display: flex; justify-content: space-between; align-items: center; }
+.status {
+  background: #e7f3ea;
+  color: #1b7f3b;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+@media (max-width: 640px) {
+  .two-col { grid-template-columns: 1fr; }
+}
